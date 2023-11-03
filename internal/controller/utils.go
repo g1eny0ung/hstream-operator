@@ -24,7 +24,7 @@ func structAssign(dist, src interface{}) {
 			continue
 		}
 
-		// Check if the dist has the same field.
+		// Check if the dist has the same field, if not, skip it.
 		name := srcType.Field(i).Name
 		distValField := distVal.FieldByName(name)
 		if ok := distValField.IsValid(); !ok {

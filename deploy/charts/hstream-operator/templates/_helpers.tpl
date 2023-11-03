@@ -60,3 +60,23 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+
+Below are custom templates for hstream-operator.
+
+*/}}
+
+{{/*
+Create default name of ValidationWebhookConfiguration.
+*/}}
+{{- define "hstream-operator.validationName" -}}
+{{- printf "hstream-operator-validation" }}
+{{- end }}
+
+{{/*
+Create default name of MutatingWebhookConfiguration.
+*/}}
+{{- define "hstream-operator.mutatingName" -}}
+{{- printf "hstream-operator-mutating" }}
+{{- end }}

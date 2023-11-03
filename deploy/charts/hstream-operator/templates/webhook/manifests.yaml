@@ -1,0 +1,62 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ template "hstream-operator.mutatingName" }}-webhook-configuration
+  labels: {{ include "hstream-operator.labels" . | nindent 4 }}
+    app.kubernetes.io/name: mutatingwebhookconfiguration
+    app.kubernetes.io/component: webhook
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/hstream-operator-serving-cert
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: hstream-operator-webhook-service
+      namespace: {{ .Release.Namespace | quote }}
+      path: /mutate-apps-hstream-io-v1beta1-connector
+  failurePolicy: Fail
+  name: mconnector.kb.io
+  rules:
+  - apiGroups:
+    - apps.hstream.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - connectors
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{ template "hstream-operator.validationName" }}-webhook-configuration
+  labels: {{ include "hstream-operator.labels" . | nindent 4 }}
+    app.kubernetes.io/name: validatingwebhookconfiguration
+    app.kubernetes.io/component: webhook
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/hstream-operator-serving-cert
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: hstream-operator-webhook-service
+      namespace: {{ .Release.Namespace | quote }}
+      path: /validate-apps-hstream-io-v1beta1-connector
+  failurePolicy: Fail
+  name: vconnector.kb.io
+  rules:
+  - apiGroups:
+    - apps.hstream.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - connectors
+  sideEffects: None

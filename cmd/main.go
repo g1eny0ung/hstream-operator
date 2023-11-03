@@ -20,8 +20,6 @@ import (
 	"flag"
 	"os"
 
-	"go.uber.org/zap/zapcore"
-
 	"github.com/hstreamdb/hstream-operator/internal/admin"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -34,6 +32,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	hapi "github.com/hstreamdb/hstream-operator/api/v1alpha2"
 	"github.com/hstreamdb/hstream-operator/api/v1beta1"
@@ -74,32 +73,17 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	opts := zap.Options{
-		TimeEncoder: zapcore.RFC3339TimeEncoder,
+		Development: true,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	logWriter := os.Stdout
-
-	// TODO: write log to file?
-	//lumberjackLogger := &lumberjack.Logger{
-	//	Filename:   opts.LogFile,
-	//	MaxSize:    opts.LogFileMaxSize,
-	//	MaxAge:     opts.LogFileMaxAge,
-	//	MaxBackups: opts.MaxNumberOfOldLogFiles,
-	//	Compress:   opts.CompressOldFiles,
-	//}
-	//logWriter = io.MultiWriter(os.Stdout, lumberjackLogger)
-
-	logger := zap.New(
-		zap.UseFlagOptions(&opts),
-		zap.WriteTo(logWriter))
+	logger := zap.New(zap.UseFlagOptions(&opts))
 	ctrl.SetLogger(logger)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Metrics:                metricsserver.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "8f62a9aa.hstream.io",
@@ -142,6 +126,12 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ConnectorTemplate")
 		os.Exit(1)
+	}
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&v1beta1.Connector{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Connector")
+			os.Exit(1)
+		}
 	}
 	//+kubebuilder:scaffold:builder
 

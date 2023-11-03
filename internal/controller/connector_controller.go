@@ -225,7 +225,7 @@ func (r *ConnectorReconciler) createConnectorDeployment(ctx context.Context, con
 
 	connector.Spec.Container.Ports = containerPorts
 	preconfiguredContainer := corev1.Container{
-		Name:  connector.Name,
+		Name:  v1beta1.ComponentTypeConnector,
 		Image: addImageRegistry(v1beta1.ConnectorImageMap[connector.Spec.Type], connector.Spec.ImageRegistry),
 		Args: []string{
 			"run",
